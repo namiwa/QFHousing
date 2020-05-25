@@ -76,3 +76,6 @@ class ML_Model:
         
     def get_metrics(self,):
         print(self.metrics)
+
+    def get_model(self,):
+        return self.model   
