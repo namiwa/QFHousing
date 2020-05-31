@@ -45,3 +45,10 @@ def lag_housing_df(resale_approval_full: pd.DataFrame):
     lagged_data.reset_index(drop=True, inplace=True)
     lagged_data.to_csv("data/fixed_resale_with_bus.csv")
     print(f"time taken: {time.time() - start}")    
+
+def get_processed_gdp_data():
+    gdp_data = pd.read_csv("data/gross-domestic-product-at-current-prices-annual.csv")
+    gdp_data["perc_change"] = gdp_data["value"].pct_change() * 100
+    gdp_data.drop("level_1", axis=1, inplace=True)
+    gdp_data.columns=["year", "GDP_value", "GDP_perc_change"]
+    return gdp_data
