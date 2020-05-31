@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error, explained_variance_score, r2_score, mean_absolute_error
@@ -17,7 +18,8 @@ class ML_Model:
         self.y = y
         self.X_train, self.X_test, self.y_train, self.y_test =  split_fn(X,y)
         self.metrics = {}
-    
+        self.preds = None
+
     def fit(self):
         self.model.fit(self.X_train, self.y_train)
         
@@ -29,6 +31,7 @@ class ML_Model:
         self.metrics["Explained Variance"] = explained_variance_score(self.y_test, self.preds)
         self.metrics["R^2"] = r2_score(self.y_test, self.preds)
         self.metrics["MAE"] = mean_absolute_error(self.y_test, self.preds)
+        self.metrics["MSPE"] = self.metrics["MSE"] / (np.average(self.y)**2)
         
     def rolling_predict(self, rolling_month):
         roll_df = pd.concat([self.X,self.y], axis=1)
@@ -76,6 +79,11 @@ class ML_Model:
         
     def get_metrics(self,):
         print(self.metrics)
+    
+    def get_predicted(self,):
+        if self.preds == None:
+            raise Exception("prediction is not performed yet")
+        return self.preds
 
     def get_model(self,):
         return self.model   
