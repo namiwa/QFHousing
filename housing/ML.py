@@ -86,4 +86,7 @@ class ML_Model:
         return self.preds
 
     def get_model(self,):
-        return self.model   
+        return self.model
+
+    def get_MSE(self,):
+        return self.metrics['MSE']   
