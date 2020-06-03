@@ -28,8 +28,6 @@ def statistical_plots(fitted_y, y):
     #QQPlot
     res  = pd.DataFrame(y - fitted_y)
     plot_3 = sm.qqplot(res, stats.t, distargs=(4,), line='s');
-    
-
 
 def ttest(model, X):
     '''
@@ -73,4 +71,6 @@ def AIC_BIC(fitted_y, y, k):
     n = len(fitted_y)
     AIC = 2*k - 2*np.log(SSE)
     BIC = n*np.log(SSE/n) + k*np.log(n)
-    return "AIC: "+ str(AIC) + " BIC: " + str(BIC)
+    # "AIC: "+ str(AIC) + " BIC: " + str(BIC)
+    return AIC, BIC
+    
