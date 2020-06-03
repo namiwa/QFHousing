@@ -22,16 +22,34 @@ class ML_Model:
 
     def fit(self):
         self.model.fit(self.X_train, self.y_train)
-        
-    def predict(self,):
+
+        preds = self.model.predict(self.X_train)
+        print("Adding fitted regression metrics ...")
+        self.metrics["fitted_metrics"] = {
+            "MSE" : mean_squared_error(self.y_train, preds),
+            "Explained Variance" : explained_variance_score(self.y_train, preds),
+            "R^2" : r2_score(self.y_train, preds),
+            "MAE" : mean_absolute_error(self.y_train, preds),
+        }
+        self.metrics["fitted_metrics"]["RMSE"] = np.sqrt([self.metrics["fitted_metrics"]["MSE"]])
+        self.metrics["fitted_metrics"]["MSPE"] = self.metrics["fitted_metrics"]["MSE"] / (np.average(self.y_train)**2) * 100
+
+    def predict_test(self, ):
         self.preds = self.model.predict(self.X_test)
         
-        print("Adding some metrics: mse, R_squared, Explained variance")
-        self.metrics["MSE"] =  mean_squared_error(self.y_test, self.preds)
-        self.metrics["Explained Variance"] = explained_variance_score(self.y_test, self.preds)
-        self.metrics["R^2"] = r2_score(self.y_test, self.preds)
-        self.metrics["MAE"] = mean_absolute_error(self.y_test, self.preds)
-        self.metrics["MSPE"] = self.metrics["MSE"] / (np.average(self.y)**2)
+        print("Adding OOB regression metrics ...")
+        self.metrics["test_metrics"] = {
+            "MSE" : mean_squared_error(self.y_test, self.preds),
+            "Explained Variance" : explained_variance_score(self.y_test, self.preds),
+            "R^2" : r2_score(self.y_test, self.preds),
+            "MAE" : mean_absolute_error(self.y_test, self.preds),
+        }
+        self.metrics["test_metrics"]["RMSE"] = np.sqrt([self.metrics["test_metrics"]["MSE"]])
+        self.metrics["test_metrics"]["MSPE"] = self.metrics["test_metrics"]["MSE"] / (np.average(self.y_train)**2) * 100
+        return self.preds
+    
+    def predict(self, test):
+        return self.model.predict(test)
         
     def rolling_predict(self, rolling_month):
         roll_df = pd.concat([self.X,self.y], axis=1)
@@ -78,7 +96,7 @@ class ML_Model:
         self.metrics[name] = fn(self.preds, self.y_test)
         
     def get_metrics(self,):
-        print(self.metrics)
+        return self.metrics
     
     def get_predicted(self,):
         if self.preds == None:
@@ -86,4 +104,17 @@ class ML_Model:
         return self.preds
 
     def get_model(self,):
-        return self.model   
+        return self.model  
+    
+
+class Plotting:
+    def __init__(self,):
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(11,7))
+    
+    def residual_plot(self, preds, actual):
+        plt.plot(actual - preds)
+    
+    def viz_predicted(self, preds, actual):
+        plt.plot(preds, label='predicted', color='tab:orange')
+        plt.plot(actual, label='actual', color='tab:blue')
