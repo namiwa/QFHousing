@@ -1,6 +1,7 @@
-data/
 !data/lagged_approval.csv
 !data/resale_with_location_final.csv
+!data/final_df.csv
+data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
