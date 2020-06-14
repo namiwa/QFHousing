@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error, explained_variance_score, r2_score, mean_absolute_error
 
+# from housing.ModelChecking import AIC_BIC
+
 class ML_Model:
     def __init__(self,model, X, y, split_fn):
         ''' Args
@@ -16,13 +18,13 @@ class ML_Model:
         self.model = model
         self.X = X
         self.y = y
+        self.split_fn = split_fn
         self.X_train, self.X_test, self.y_train, self.y_test =  split_fn(X,y)
         self.metrics = {}
         self.preds = None
 
     def fit(self):
         self.model.fit(self.X_train, self.y_train)
-
         preds = self.model.predict(self.X_train)
         print("Adding fitted regression metrics ...")
         self.metrics["fitted_metrics"] = {
@@ -30,9 +32,42 @@ class ML_Model:
             "Explained Variance" : explained_variance_score(self.y_train, preds),
             "R^2" : r2_score(self.y_train, preds),
             "MAE" : mean_absolute_error(self.y_train, preds),
+            "MSPE": np.average(np.divide((self.y_train - preds), self.y_train)) * 100
+        }  
+        self.metrics["fitted_metrics"]["RMSE"] = np.sqrt([self.metrics["fitted_metrics"]["MSE"]])[0]
+
+    def fit_multiple(self, iter:int):
+        MSEs = []
+        explained_vars = []
+        r_squares = []
+        MAEs = []
+        MSPEs = []
+        # AICs = []
+        # BICs = []
+        for i in range(iter):
+            self.X_train, self.X_test, self.y_train, self.y_test =  self.split_fn(self.X,self.y)
+            self.fit()
+            preds = self.model.predict(self.X_train)
+            # aicbic = AIC_BIC(preds, self.y_test, (self.X_test.shape[1]+1))
+            MSEs.append(mean_squared_error(self.y_train, preds))
+            explained_vars.append(explained_variance_score(self.y_train, preds))
+            r_squares.append(r2_score(self.y_train, preds))
+            MAEs.append(mean_absolute_error(self.y_train, preds))
+            MSPEs.append(np.average(np.divide((self.y_train - preds), self.y_train)) * 100)
+            # AICs.append(aicbic[0])
+            # BICs.append(aicbic[1])
+        
+        self.metrics["fitted_metrics"] = {
+            "MSE" : np.average(MSEs),
+            "Explained Variance" : np.average(explained_vars),
+            "R^2" : np.average(r_squares),
+            "MAE" : np.average(MAEs),
+            "MSPE": abs(np.average(MSPEs)),
+            # "AIC" : np.average(AICs),
+            # "BIC" : np.average(BICs),
         }
-        self.metrics["fitted_metrics"]["RMSE"] = np.sqrt([self.metrics["fitted_metrics"]["MSE"]])
-        self.metrics["fitted_metrics"]["MSPE"] = self.metrics["fitted_metrics"]["MSE"] / (np.average(self.y_train)**2) * 100
+        self.metrics["fitted_metrics"]["RMSE"] = np.sqrt([self.metrics["fitted_metrics"]["MSE"]])[0]
+
 
     def predict_test(self, ):
         self.preds = self.model.predict(self.X_test)
