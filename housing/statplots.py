@@ -16,12 +16,15 @@ class statplots:
         self.index = index
         self.model = model
         self.X = X
-        df = pd.DataFrame(fitted_y.values, index.values)
-        df['test_y'] = test_y.values
+        df = pd.DataFrame(fitted_y, index)
+        df['test_y'] = test_y
         df.columns = ['fitted_y','test_y']
+        df = df.reset_index().drop(columns=['index'])
+        df['residuals'] = df['test_y'] - df['fitted_y']
         self.df = df
         self.xTransposedDotX = None
         self.hat_matrix = None
+        print('statsplot for this model has been loaded!')
 
     def predictedVsActual(self, numOfPlots, numOfPoints):
         '''
@@ -30,28 +33,69 @@ class statplots:
             be less than couple hundred for easier visualisation
         '''
         
-        if (len(self.fitted_y)/numOfPlots > numOfPoints):
+        if (len(self.fitted_y)/numOfPlots < numOfPoints):
             return "Error: Too many plots or too many points!!!"
         else:
             plotrange = len(self.fitted_y)//numOfPlots
         for i in range(numOfPlots):
             startpoint = random.randint(i*plotrange, (i+1)*plotrange - numOfPoints)
             endpoint = startpoint + numOfPoints
-            self.df.iloc[startpoint:endpoint].plot(colormap = 'Dark2')
+            plot_df = self.df.iloc[startpoint:endpoint].reset_index().drop(columns=
+                ['index','residuals'])
+            plot = plot_df.plot(colormap = 'Dark2')
+            plot.set_xlabel("Transaction")
+            plot.set_ylabel("Prices")    
     
-    def residualPlot(self):
-        plot = plt.figure()
-        plot = sns.residplot(self.fitted_y, self.test_y,
-                                scatter_kws={'alpha': 0.5},
-                                line_kws={'color': 'red', 'lw': 1, 'alpha': 0.8})
-        plot.set_title('Residuals vs Fitted')
-        plot.set_xlabel('Fitted values')
-        plot.set_ylabel('Residuals');
+    def residualPlot(self, *args):
+        '''
+        if no number passed (left empty) then assumed all points to be plotted else 
+        plot a random range of number of datapoints desired
+        '''
+        plotrange = len(self.fitted_y)
+        if (args == ()):
+            startpoint = 0
+            endpoint = plotrange
+        else:
+            numOfPoints = args[0]
+            startpoint = random.randint(0, plotrange - numOfPoints)
+            endpoint = startpoint + numOfPoints
+        sns.scatterplot(data = 
+            self.df.drop(columns=['fitted_y','test_y'])[startpoint:endpoint])
+        plt.xlabel("Transactions")
+        plt.ylabel("Prices ($)")
+        plt.title("Residual Plot")
+        
+    def residualVsFitted(self, *args):
+        '''
+        if no number passed (left empty) then assumed all points to be plotted else 
+        plot a random range of number of datapoints desired
+        '''
+        plotrange = len(self.fitted_y)
+        if (args == ()):
+            startpoint = 0
+            endpoint = plotrange
+            #plot = sns.residplot(self.fitted_y, self.test_y,
+            #                        scatter_kws={'alpha': 0.5},
+            #                        line_kws={'color': 'red', 'lw': 1, 'alpha': 0.8})
+            #plot.set_title('Residuals vs Fitted')
+            #plot.set_xlabel('Fitted values')
+            #plot.set_ylabel('Residuals');
+        else:
+            numOfPoints = args[0]
+            startpoint = random.randint(0, plotrange - numOfPoints)
+            endpoint = startpoint + numOfPoints
+        sns.scatterplot(self.df['fitted_y'][startpoint:endpoint], 
+            self.df['residuals'][startpoint:endpoint])
+        plt.xlabel("Fitted Prices ($)")
+        plt.ylabel("Residual Prices ($)")
+        plt.title("Residual vs Fitted")
+
+
 
     def qqplot(self):
         residual = self.test_y - self.fitted_y
         if (self.xTransposedDotX == None):
-            hat_matrix_calc()
+            self.hat_matrix_calc()
         MSE = self.model.get_MSE()
         residual_var = MSE*(np.ones((len(self.X),1)) - self.hat_matrix.diagonal())
         studentised_residual = residual / residual_var
@@ -75,7 +119,7 @@ class statplots:
             return "Wrong ML Model"
         MSE = self.model.get_MSE()
         if (self.xTransposedDotX == None):
-            hat_matrix_calc()
+            self.hat_matrix_calc()
         standard_error = np.sqrt(MSE*(self.xTransposedDotX.diagonal()))
         test_statistic = coeffs / standard_error
 
